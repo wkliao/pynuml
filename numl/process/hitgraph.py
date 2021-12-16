@@ -196,7 +196,7 @@ def process_event(event_id, evt, l, e, lower_bnd=20, **edge_args):
       start_t = end_t
 
   if data["y_s_u"].max() > 7 or data["y_s_v"].max() > 7 or data["y_s_y"].max() > 7:
-    print("\n  error: hit with invisible label found! skipping event\n")
+    # print("\n  error: hit with invisible label found! skipping event ",event_id)
     return []
 
   return [[f"r{event_id[0]}_sr{event_id[1]}_evt{event_id[2]}", tg.data.Data(**data)]]
@@ -232,7 +232,7 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
 
   # only use the following groups and datasets in them
   f.add_group("hit_table")
-  f.add_group("particle_table", ["g4_id", "parent_id", "type", "momentum", "start_process", "end_process"])
+  f.add_group("particle_table", ["g4_id", "parent_id", "type", "momentum", "start_process_id", "end_process_id"])
   f.add_group("edep_table")
   f.add_group("spacepoint_table")
 
@@ -467,6 +467,7 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
       else:
         print("labelling                   time ", end='')
       print("MAX=%8.2f  MIN=%8.2f  MID=%8.2f" % (sort_t[nprocs-1], sort_t[0], sort_t[nprocs//2]))
+      print("label=",all_t[9])
       sort_t = all_t[10]
       print("hit_table merge             time ", end='')
       print("MAX=%8.2f  MIN=%8.2f  MID=%8.2f" % (sort_t[nprocs-1], sort_t[0], sort_t[nprocs//2]))

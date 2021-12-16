@@ -3,10 +3,54 @@ from mpi4py import MPI
 import sys
 import enum
 
+@enum.unique
 class Partition(enum.Enum):
   evt_id_based = 0
   evt_amnt_based = 1
   particle_based = 2
+
+# class process_label(enum.Enum):
+CoulombScat           = 0
+CoupledTransportation = 1
+Decay                 = 2
+FastScintillation     = 3
+He3Inelastic          = 4
+StepLimiter           = 5
+alphaInelastic        = 6
+annihil               = 7
+compt                 = 8
+conv                  = 9
+dInelastic            = 10
+eBrem                 = 11
+eIoni                 = 12
+electronNuclear       = 13
+hBertiniCaptureAtRest = 14
+hBrems                = 15
+hIoni                 = 16
+hadElastic            = 17
+kaonPInelastic        = 18
+kaonMInelastic        = 19
+kaon0LInelastic       = 20
+kaon0SInelastic       = 21
+lambdaInelastic       = 22
+muBrems               = 23
+muIoni                = 24
+muMinusCaptureAtRest  = 25
+muPairProd            = 26
+muPlusCaptureAtRest   = 27
+muonNuclear           = 28
+nCapture              = 29
+neutronInelastic      = 30
+phot                  = 31
+photonNuclear         = 32
+piPlusInelastic       = 33
+piMinusInelastic      = 34
+positronNuclear       = 35
+primary               = 36
+protonInelastic       = 37
+sigmaPlusInelastic    = 38
+sigmaMinusInelastic   = 39
+tInelastic            = 40
 
 class NuMLFile:
   def __init__(self, file):
@@ -446,8 +490,11 @@ class NuMLFile:
       # dataset as the key.
       self._data[group] = {}
       for dataset in datasets:
+        dest = dataset
+        if dataset == "start_process_id": dest = "start_process"
+        elif dataset == "end_process_id": dest = "end_process"
         # read subarray into a numpy array using independent mode (HDF5 default)
-        self._data[group][dataset] = np.array(self._fd[group][dataset][lower : upper])
+        self._data[group][dest] = np.array(self._fd[group][dataset][lower : upper])
         # with self._fd[group][dataset].collective:  # read each dataset collectively
           # self._data[group][dataset] = self._fd[group][dataset][lower : upper]
 
