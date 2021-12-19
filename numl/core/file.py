@@ -248,7 +248,7 @@ class NuMLFile:
         # now we have collected the number of events per event ID across all groups
         total_evt_num = np.sum(evt_size)
         avg_evt_num = total_evt_num // nprocs
-        avg_evt = total_evt_num // num_events / 2
+        avg_evt = total_evt_num // num_events // 2
 
         # assign ranges of event IDs to individual processes
         acc_evt_num = 0
@@ -279,7 +279,7 @@ class NuMLFile:
         seq_cnt = self._whole_seq_cnt['particle_table']
         total_evt_num = np.sum(seq_cnt[:,1])
         avg_evt_num = total_evt_num // nprocs
-        avg_evt = total_evt_num // seq_cnt.shape[0] / 2
+        avg_evt = total_evt_num // seq_cnt.shape[0] // 2
 
         starts[0] = seq_cnt[0,0]
         acc_evt_num = 0
