@@ -248,7 +248,7 @@ class NuMLFile:
         # now we have collected the number of events per event ID across all groups
         total_evt_num = np.sum(evt_size)
         avg_evt_num = total_evt_num // nprocs
-        avg_evt = total_evt_num // num_events // 2
+        avg_evt = total_evt_num // np.count_nonzero(evt_size) // 2
 
         # assign ranges of event IDs to individual processes
         acc_evt_num = 0
