@@ -227,6 +227,7 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
 
   if profiling:
     open_time = MPI.Wtime() - timing
+    sys.stdout.flush()
     comm.Barrier()
     timing = MPI.Wtime()
 
@@ -258,6 +259,7 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
 
   if profiling:
     part_time = MPI.Wtime() - timing
+    sys.stdout.flush()
     comm.Barrier()
     timing = MPI.Wtime()
 
@@ -269,6 +271,7 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
 
   if profiling:
     read_time = MPI.Wtime() - timing
+    sys.stdout.flush()
     comm.Barrier()
     timing = MPI.Wtime()
 
@@ -280,6 +283,7 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
 
   if profiling:
     build_list_time = MPI.Wtime() - timing
+    sys.stdout.flush()
     comm.Barrier()
     write_time   = 0
     graph_time   = 0
@@ -367,6 +371,8 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
     comm.Gather(my_t, all_t, root=0)
 
     if rank == 0:
+      for i in range(nprocs):
+        print("label[%4d]=%.2f starts=%9d counts=%6d" % (i,all_t[i,9],starts[i],counts[i]))
       # transport to 14 x nprocs
       all_t = all_t.transpose(1, 0)
       # sort along each row in order to get MAX, MIN, and Median
@@ -467,7 +473,6 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
       else:
         print("labelling                   time ", end='')
       print("MAX=%8.2f  MIN=%8.2f  MID=%8.2f" % (sort_t[nprocs-1], sort_t[0], sort_t[nprocs//2]))
-      print("label=",all_t[9])
       sort_t = all_t[10]
       print("hit_table merge             time ", end='')
       print("MAX=%8.2f  MIN=%8.2f  MID=%8.2f" % (sort_t[nprocs-1], sort_t[0], sort_t[nprocs//2]))
