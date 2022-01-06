@@ -50,11 +50,13 @@
       /global/cscratch1/sd/wkliao/uboone/numu_slice_89_seq_cnt_seq.h5
       ```
   + Generate graphs in parallel.
-    * Set up the python environment. See [python_env.md](./python_env.md).
-    * Below shows a batch script file to run `example/process.py` in parallel
-      on Cori. It allocates 128 MPI processes on 2 KNL nodes. The output files
-      can be either in pytorch or HDF5 format. In this example, the output are
-      128 HDF5 files, one per MPI process, stored in folder $SCRATCH/uboone_out.
+    * You can either set up your own python environment or simply make use of a
+      pre-built docker image. For former, see [python_env.md](./python_env.md).
+    * When using your own python environment, an example batch script file is
+      shown below. It allocates 128 MPI processes on 2 KNL nodes. The output
+      files can be either in pytorch or HDF5 format. In this example, the
+      output are 128 HDF5 files, one per MPI process, stored in output folder
+      $SCRATCH/uboone_out.
       ```
       % cat sbatch.sh
       #!/bin/bash -l
@@ -76,6 +78,17 @@
            -i $SCRATCH/uboone/numu_slice_89_seq_cnt_seq.h5 \
            -o $SCRATCH/uboone_out/numu_slice
       ````
+    * When using the pre-built docker image on Cori, add the following line to
+      the batch script:
+      ```
+      #SBATCH --image=docker:wkliao/cori_image:latest
+      ```
+      and replace the srun command line with the following.
+      ```
+      srun -n $NP shifter python3 example/process.py -p -5 \
+           -i $SCRATCH/uboone/numu_slice_89_seq_cnt_seq.h5 \
+           -o $SCRATCH/uboone_out/numu_slice
+      ````
 * On a local Linux machine
   + First concatenate the raw HDF5 files and add the event sequence datasets,
     as described above.
@@ -90,10 +103,9 @@
   + Generate graphs in parallel:
   ```
   source ~/venv/bin/activate.csh
-  mpiexec -l -n 8 python example/process.py \
+  mpiexec -l -n 8 python example/process.py -p -5 \
           -i /scratch/x0123_seq_cnt_seq.h5 \
-          -o /scratch/output/x0123 \
-          -p -5
+          -o /scratch/output/x0123
   ```
 
 * Example output from a 128-process run on two Cori KNL nodes:
