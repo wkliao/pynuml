@@ -34,7 +34,7 @@ def main(argv):
     elif opt == "-f":   # overwrite the output file, if exists
       overwrite = True
     elif opt == "-d":   # event partition method.
-      evt_partition = arg
+      evt_partition = int(arg)
                         # if arg == 0:   use event ID based
                         # elif arg == 1: use event amount based
                         # elif arg == 2: use event amount in paticle table
