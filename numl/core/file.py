@@ -236,7 +236,7 @@ class NuMLFile:
           else:
             self._counts[rank_id] += 1
             acc_evt_num += evt_size[j]
-        self._counts[nprocs-1] += num_events - j
+        self._counts[rank_id] += num_events - j
 
       elif self._evt_part == 2:
         # use event amounts in the particle_table only to partition events
@@ -268,8 +268,7 @@ class NuMLFile:
             rank_id += 1
           else:
             acc_evt_num += seq_cnt[j, 1]
-
-        self._counts[nprocs-1] = num_events - self._starts[nprocs-1]
+        self._counts[rank_id] = num_events - self._starts[rank_id]
 
     # All processes participate the collective communication, scatter.
     # Root distributes start and count to all processes. Note only root process
