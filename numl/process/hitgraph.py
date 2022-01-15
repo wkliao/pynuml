@@ -196,7 +196,7 @@ def process_event(event_id, evt, l, e, lower_bnd=20, **edge_args):
       start_t = end_t
 
   if data["y_s_u"].max() > 7 or data["y_s_v"].max() > 7 or data["y_s_y"].max() > 7:
-    print("\n  error: hit with invisible label found! skipping event\n")
+    print("\n  error: hit with invisible label found! skipping event ",event_id,"\n")
     return []
 
   return [[f"r{event_id[0]}_sr{event_id[1]}_evt{event_id[2]}", tg.data.Data(**data)]]
@@ -335,18 +335,18 @@ def process_file(out, fname, g=process_event, l=standard.semantic_label,
 
     global edep1_t, edep2_t, hit_merge_t, torch_t, plane_t, label_t, edge_t
 
-    my_t = np.array([open_time, read_time, build_list_time,
-                     graph_time, write_time, total_time, edep1_t, edep2_t,
-                     label_t, hit_merge_t, plane_t, torch_t, edge_t])
-    all_t  = None
-    if rank == 0:
-      all_t  = np.empty([nprocs, 14], dtype=np.double)
+    # 13 timers
+    my_t = np.array([open_time, read_time, build_list_time, graph_time,
+                     write_time, total_time, edep1_t, edep2_t, label_t,
+                     hit_merge_t, plane_t, torch_t, edge_t])
+    all_t = None
+    if rank == 0: all_t = np.empty([nprocs, 13], dtype=np.double)
 
     # root process gathers all timings from all processes
     comm.Gather(my_t, all_t, root=0)
 
     if rank == 0:
-      # transport to 14 x nprocs
+      # transport to 13 x nprocs
       all_t = all_t.transpose(1, 0)
       # sort along each row in order to get MAX, MIN, and Median
       all_t = np.sort(all_t)
