@@ -191,6 +191,7 @@ class NuMLFile:
           self._counts[j] = _count
 
       elif self._evt_part == 1:
+        # print("-------------------- Partition.evt_amnt_based")
         # event amount based partitioning, which calculates event sizes
         # across all groups. Note it is possible multiple consecutive rows
         # a dataset have the same event ID. It is also possible some event
@@ -212,23 +213,33 @@ class NuMLFile:
         # now we have collected the number of events per event ID across all groups
         total_evt_num = np.sum(evt_size)
         avg_evt_num = total_evt_num // nprocs
-        avg_evt = total_evt_num // num_events / 2
+        avg_evt = total_evt_num // np.count_nonzero(evt_size) // 2
+        # print("total_evt_num=",total_evt_num," avg_evt_num=",avg_evt_num," avg_evt=",avg_evt)
 
         # assign ranges of event IDs to individual processes
         acc_evt_num = 0
         rank_id = 0
+        all_acc = 0
         for j in range(num_events):
           if rank_id == nprocs - 1: break
           if acc_evt_num + evt_size[j] >= avg_evt_num:
             remain_l = avg_evt_num - acc_evt_num
             remain_r = evt_size[j] - remain_l
-            if remain_l > remain_r and remain_l > avg_evt:
+            # if acc_evt_num == 0 or remain_l > 0:
+            # if acc_evt_num == 0 or remain_l < remain_r:
+            # if acc_evt_num == 0 or (remain_l > remain_r and remain_l > avg_evt):
+            # if remain_l > remain_r and remain_l > avg_evt:
+            if acc_evt_num == 0 or remain_l > avg_evt:
               # assign event j to rank_id
               self._counts[rank_id] += 1
+              # print("L[",rank_id,"] acc_evt_num=",acc_evt_num+evt_size[j]," evt_size[j]=",evt_size[j])
+              all_acc += acc_evt_num+evt_size[j]
               acc_evt_num = 0
             else:
               # assign event j to rank_id+1
               self._counts[rank_id+1] = 1
+              # print("R[",rank_id,"] acc_evt_num=",acc_evt_num," evt_size[j]=",evt_size[j])
+              all_acc += acc_evt_num
               acc_evt_num = evt_size[j]
             # done with rank_id i
             rank_id += 1
@@ -238,37 +249,62 @@ class NuMLFile:
             acc_evt_num += evt_size[j]
         self._counts[rank_id] += num_events - j
 
+        # if rank_id == nprocs-1: print("x[",rank_id,"] acc_evt_num=",acc_evt_num+np.sum(evt_size[j:]))
+        # else: print("[",rank_id,"] acc_evt_num=",acc_evt_num)
+        # all_acc += acc_evt_num + np.sum(evt_size[j:])
+        # print("============ all_acc=",all_acc)
+
       elif self._evt_part == 2:
+        # print("-------------------- Partition.particle_based")
         # use event amounts in the particle_table only to partition events
         seq_cnt = self._whole_seq_cnt['particle_table']
         total_evt_num = np.sum(seq_cnt[:,1])
         avg_evt_num = total_evt_num // nprocs
-        avg_evt = total_evt_num // seq_cnt.shape[0] / 2
+        avg_evt = total_evt_num // seq_cnt.shape[0] // 2
+        # print("seq_cnt.shape[0]=",seq_cnt.shape[0]," non_empty=",np.count_nonzero(seq_cnt[:,1]))
+        # print("total_evt_num=",total_evt_num," avg_evt_num=",avg_evt_num," avg_evt=",avg_evt)
 
         self._starts[0] = seq_cnt[0,0]
         acc_evt_num = 0
         rank_id = 0
+        all_acc = 0
         for j in range(seq_cnt.shape[0]):
           if rank_id == nprocs - 1: break
           if acc_evt_num + seq_cnt[j,1] >= avg_evt_num:
             remain_l = avg_evt_num - acc_evt_num
             remain_r = seq_cnt[j,1] - remain_l
             # if remain_r > remain_l:
-            if remain_l > remain_r and remain_l > avg_evt:
+            # if acc_evt_num == 0 or (remain_l > remain_r and remain_l > avg_evt):
+            # if acc_evt_num == 0 or (remain_l > remain_r and remain_r < avg_evt):
+            # if acc_evt_num == 0 or remain_l > 0:
+            # if acc_evt_num == 0 or remain_r < avg_evt:
+            # if acc_evt_num == 0 or remain_l < remain_r:
+            # if acc_evt_num == 0 or remain_l > remain_r:
+            if acc_evt_num == 0 or remain_l > avg_evt:
               # assign event j to rank_id
               self._counts[rank_id] = seq_cnt[j+1, 0] - self._starts[rank_id]
               self._starts[rank_id+1] = seq_cnt[j+1, 0]
+              # print("L[",rank_id,"] acc_evt_num=",acc_evt_num+seq_cnt[j,1])
+              all_acc += acc_evt_num+seq_cnt[j,1]
               acc_evt_num = 0
             else:
               # assign event j to rank_id+1
               self._counts[rank_id] = seq_cnt[j, 0] - self._starts[rank_id]
               self._starts[rank_id+1] = seq_cnt[j, 0]
+              # print("R[",rank_id,"] acc_evt_num=",acc_evt_num)
+              all_acc += acc_evt_num
               acc_evt_num = seq_cnt[j, 1]
             # done with rank_id
             rank_id += 1
           else:
             acc_evt_num += seq_cnt[j, 1]
         self._counts[rank_id] = num_events - self._starts[rank_id]
+
+        # print("============ len=",seq_cnt.shape[0]," j=",j," acc_evt_num=",acc_evt_num," remain=",np.sum(seq_cnt[j:, 1]))
+        # if rank_id == nprocs-1: print("x[",rank_id,"] acc_evt_num=",acc_evt_num+np.sum(seq_cnt[j:, 1]))
+        # else: print("[",rank_id,"] acc_evt_num=",acc_evt_num)
+        # all_acc += acc_evt_num + np.sum(seq_cnt[j:, 1])
+        # print("============ all_acc=",all_acc)
 
     # All processes participate the collective communication, scatter.
     # Root distributes start and count to all processes. Note only root process
@@ -283,7 +319,6 @@ class NuMLFile:
 
     # This process is assigned event IDs of range from self._my_start to
     # (self._my_start + self._my_count - 1)
-    # print("my_start=",self._my_start," my_count=",self._my_count);
 
     # each process reads its share of dataset "event_table/event_id" and
     # stores it in a numpy array
